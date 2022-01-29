@@ -24,7 +24,8 @@ function getStudentRoster() {
       weekDay: 'long',
       month: 'long',
       day: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
+      defaultTimeZone: 'EST'
     }
     
     const emailColIndex = headers.findIndex(el => el.toLowerCase().includes('email'))
@@ -44,31 +45,36 @@ function getStudentRoster() {
         const isTutorSession = description.includes('Tutorial Session')
   
         if(!isCanceled && isTutorSession){
-          
-          const student = table.find(row => row[emailColIndex] === session.guestEmail)
-          const studentName = student[studentNameIndex].split(", ")
-          const timeZone = student[timeZoneColIndex] ? student[timeZoneColIndex] : 'EST'
-          const needsTimeZone = student[timeZoneColIndex] ? false : true 
-          
           const myStatus = el.getMyStatus()
           const guestStatus = el.getGuestList()[0] ? el.getGuestList()[0].getStatus() : null 
           const guestEmail = el.getGuestList()[0] ? el.getGuestList()[0].getEmail() : null
-          const sessionStart = new Date(el.getStartTime()).toLocaleString(localeOptions.lang, { hour: localeOptions.hour, minute: localeOptions.minute, hour12: localeOptions.hour12 , timeZone: timeZone })
+         
           const sessionDate = new Date(el.getStartTime()).toLocaleDateString(localeOptions.lang, {weekday: localeOptions.weekDay, month: localeOptions.month, day: localeOptions.day, year: localeOptions.year })
-          const firstName = studentName[1]
-          const lastName = studentName[0]
-          const hasTimeZone = needsTimeZone
           
           const session = {
-            firstName,
-            lastName,
             myStatus,
             guestStatus,
             guestEmail,
-            sessionStart,
-            sessionDate,
-            hasTimeZone
+            sessionDate
           }
+          
+          const student = table.find(row => row[emailColIndex] === session.guestEmail)
+          const studentName = student[studentNameIndex].split(", ")
+          const timeZone = student[timeZoneColIndex] ? student[timeZoneColIndex] : ''
+          const hasTimeZone = student[timeZoneColIndex] ? true : false 
+  
+           const sessionStart = new Date(el.getStartTime()).toLocaleString(localeOptions.lang, { hour: localeOptions.hour, minute: localeOptions.minute, hour12: localeOptions.hour12 , timeZone: timeZone || localeOptions.defaultTimeZone })
+          
+          const firstName = studentName[1]
+          const lastName = studentName[0]
+          
+          session.firstName = firstName
+          session.lastName = lastName
+          session.hasTimeZone = hasTimeZone 
+          session.sessionStart = sessionStart
+          session.timeZone = timeZone
+          session.defaultTimeZone = localeOptions.defaultTimeZone
+          
   
           console.log(session)
           tutorSessions.push(session)
@@ -82,7 +88,8 @@ function getStudentRoster() {
     const roster = await getStudentRoster()
     const tutorSessions = await getTutorSessions(roster)
   }
-    
+  
+  
   //   function getMonday(d) {
   //   d = new Date(d);
   //   var day = d.getDay(),
@@ -96,3 +103,13 @@ function getStudentRoster() {
   //   }
   //   return dateRange;
   // }
+  
+function getTemplate(){
+    const drafts = GmailApp.getDrafts()
+    const messages = drafts.map(el => el.getMessage())
+    messages.forEach(el => {
+    const subject = el.getSubject()
+    })
+    
+  }
+    
