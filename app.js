@@ -15,6 +15,13 @@ function getStudentRoster() {
   return data;
 }
 
+function isString(str) {
+  if (typeof str === "string") {
+    return true;
+  }
+  return false;
+}
+
 // get all tutor sessions for tomorrow
 function getTutorSessions(roster) {
   const { headers, table } = roster;
@@ -31,16 +38,24 @@ function getTutorSessions(roster) {
     defaultTimeZone: "EST",
   };
 
-  const emailColIndex = headers.findIndex((el) =>
-    el.toLowerCase().includes("email")
-  );
-  const timeZoneColIndex = headers.findIndex((el) =>
-    el.toLowerCase().includes("timezone")
-  );
-  const studentNameIndex = headers.findIndex((el) =>
-    el.toLowerCase().includes("student name")
-  );
-
+  const emailColIndex = headers.findIndex((el) => {
+    if (isString(el)) {
+      return el.toLowerCase().includes("email");
+    }
+    return false;
+  });
+  const timeZoneColIndex = headers.findIndex((el) => {
+    if (isString(el)) {
+      return el.toLowerCase().includes("timezone");
+    }
+    return false;
+  });
+  const studentNameIndex = headers.findIndex((el) => {
+    if (isString(el)) {
+      return el.toLowerCase().includes("student name");
+    }
+    return false;
+  });
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 3);
 
@@ -119,6 +134,7 @@ function getTutorSessions(roster) {
 async function filterTutorSessions() {
   const roster = await getStudentRoster();
   const tutorSessions = await getTutorSessions(roster);
+  return tutorSessions;
 }
 
 //   function getMonday(d) {
@@ -136,28 +152,35 @@ async function filterTutorSessions() {
 // }
 
 async function buildEmails() {
+  // const emailApp = GmailApp.
   const templateNames = {
-    weekendEmail: "FSF Boot Camp - Tutorial available - Weekend",
-    confirmationEmail: "FSF Boot Camp - Tutorial available - Weekend",
+    introEmail: "Intro",
+    confirmationEmail: "Confirmation",
+    weekendEmail: "Weekend",
   };
 
   const email = {
     tutorSessions: await filterTutorSessions(),
     templateEmail: await getTemplate(templateNames.confirmationEmail),
   };
+  const emailApp = GmailApp.sendEmail(
+    "chavezmeguel@yahoo.com",
+    email.templateEmail.subject,
+    "testing html body",
+    { htmlBody: email.templateEmail.body }
+  );
 }
 
-function getTemplate(templateName) {
+function getTemplate(templateType) {
   const drafts = GmailApp.getDrafts();
   const messages = drafts.map((el) => el.getMessage());
-  const findTemplate = messages.find(
-    (el) => el.getSubject() === templateName
-  );
+
+  const findTemplate = messages.find((el) => el.getSubject().includes(templateType) );
   const templateEmail = {
     subject: findTemplate.getSubject(),
     body: findTemplate.getBody(),
-    messageId: findTemplate.getMessageId(),
-    id: findTemplate.getId()
+    // messageId: findTemplate.getMessageId(),
+    id: findTemplate.getId(),
   };
   return templateEmail;
 }
